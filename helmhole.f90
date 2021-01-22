@@ -31,20 +31,20 @@ module helmhole
   real, dimension(0:nr) :: psi0r, psidr, wjr, wjmodr, fpsir, del2perp, Fperp
   real, dimension(0:nr) :: Erbyphi
 ! Boundary condition specifiers. 3 both mixed (r) | 4 mixed/fixed (z). 
-  integer :: IORDER=2,MBDCND=3,NBDCND=4,NBDeli=3,INTL=0
+  integer :: IORDER=2,MBDCND=3,NBDeli=3,INTL=0
   real :: ASEPX,BSEPX,GSEPY,XNU
 contains
   ! Mesh and Boundary condition setting.
   subroutine initrzbd
     do i=0,nr
        r(i)=rmin+(rmax-rmin)*(i)/(nr)
-       USOL(i,nz)=0. ! zero at zmax (never changes)
+       USOL(i,nz)=0. ! zero at zmax (not important)
        USOL(i,0)=0.
-! z- (sepeli's Y-) boundary conditions NBDCND=4 (slope/fixed)
+! z- (sepeli's Y-) boundary conditions NBDCND=NBDeli (both mixed)
        BDC(i)=0.     ! zero mixed sum at zmin
-       GSEPY=0.      ! sepeli's GAMA so mixed sum is just 1*d/dz
-       BDD(i)=0.     ! mixed sum value at zmax. Dummy here.
-       XNU=dlength   ! logarithmic derivative at zmax. Dummy here.
+       GSEPY=0.      ! sepeli's GAMA so mixed sum is just 1*d/dz at zmin
+       BDD(i)=0.     ! mixed sum value at zmax.
+       XNU=1./dlength! logarithmic derivative at zmax.
     enddo
     do j=0,nz    ! r-boundary conditions both mixed MBDCND=3
        z(j)=zmin+(zmax-zmin)*(j)/(nz)
@@ -277,7 +277,6 @@ contains
 !   DF(Y)*D^2U/DY^2 + EF(Y)*DU/DY + FF(Y)*U= G(X,Y)
 ! In a cylindrical x-domain we need (1/r)d/dr(r dp/dr)-p/dlength. So formally
 ! AF=1, BF=(1/r) for Laplacian.
-! A Helmholtz term CF=-1./dlength might violate Diagonal Dominance.
     AFUN=1.
     BFUN=1./(x+1.e-5*rmax)     ! assumes rmin=0. avoiding division by zero.
 ! I suspect this is inadequate at r=0 and I think it needs examination.
