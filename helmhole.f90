@@ -30,7 +30,7 @@ module helmhole
 ! Transverse Profiles
   real, dimension(0:nr) :: psi0r, psidr, wjr, wjmodr, fpsir, del2perp, Fperp
   real, dimension(0:nr) :: Erbyphi
-! Boundary condition specifiers. 3 both mixed| 4 slope/fixed. 
+! Boundary condition specifiers. 3 both mixed (r) | 4 mixed/fixed (z). 
   integer :: IORDER=2,MBDCND=3,NBDCND=4,NBDeli=3,INTL=0
   real :: ASEPX,BSEPX,GSEPY,XNU
 contains
@@ -38,19 +38,21 @@ contains
   subroutine initrzbd
     do i=0,nr
        r(i)=rmin+(rmax-rmin)*(i)/(nr)
-       USOL(i,nz)=0. ! zero at zmax
+       USOL(i,nz)=0. ! zero at zmax (never changes)
        USOL(i,0)=0.
-       BDC(i)=0.     ! zero slope at zmin
-       GSEPY=0.
-       BDD(i)=0.     ! mixed sum value at zmax
-       XNU=dlength   ! logarithmic derivative.
+! z- (sepeli's Y-) boundary conditions NBDCND=4 (slope/fixed)
+       BDC(i)=0.     ! zero mixed sum at zmin
+       GSEPY=0.      ! sepeli's GAMA so mixed sum is just 1*d/dz
+       BDD(i)=0.     ! mixed sum value at zmax. Dummy here.
+       XNU=dlength   ! logarithmic derivative at zmax. Dummy here.
     enddo
-    do j=0,nz
+    do j=0,nz    ! r-boundary conditions both mixed MBDCND=3
        z(j)=zmin+(zmax-zmin)*(j)/(nz)
-       BDA(j)=0. ! Value of mixed bc sum
-       ASEPX=0.  ! Coefficient of phi (phi' coef is 1, so phi'=0.)
-       BDB(j)=0.
-       BSEPX=dlength  ! at B dln(p)/dr=-1
+       BDA(j)=0. ! Value of mixed bc sum at rmin=0
+       ASEPX=0.  ! Coefficient of phi at rmin=0 (phi' coef is 1, so phi'=0.)
+       BDB(j)=0. ! Value of mixed sum at rmax
+   ! sepeli's BETA: Coef of phi at rmax so dln(p)/dr=-BSEPX :
+       BSEPX=(1./dlength+1./rmax)
     enddo
     WORK(1)=nwork
   end subroutine initrzbd
@@ -83,6 +85,7 @@ contains
           read(arg(4:),*)ips
        elseif(arg(1:2).eq.'-p')then
           read(arg(3:),*)psimax
+          if(wj.eq.-.02)wj=-0.2*psimax  !If wj not set, set fractional default.
        endif
        if(arg(1:2).eq.'-h')goto 1
        if(arg(1:3).eq.'-vp')read(arg(4:),*)vperpfac
